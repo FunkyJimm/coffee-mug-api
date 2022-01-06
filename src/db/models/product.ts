@@ -1,9 +1,9 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Date } from 'mongoose';
 
 interface Product {
   name: string;
   price: number;
-  updateDate: string;
+  updateDate: Date;
 }
 
 const schema = new Schema<Product>({
@@ -19,7 +19,7 @@ const schema = new Schema<Product>({
     min: [0, 'Price must be higher than 0!'],
   },
   updateDate: {
-    type: String,
+    type: Date,
     required: false,
   },
 });

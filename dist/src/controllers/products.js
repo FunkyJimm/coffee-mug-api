@@ -13,20 +13,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const product_1 = __importDefault(require("../db/models/product"));
-const getProducts = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Produkty");
+// get all products
+const getProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     product_1.default.find()
         .then(products => {
-        res.send(products);
+        const productsList = products.map(product => ({
+            id: product._id,
+            name: product.name,
+        }));
+        res.send(productsList);
     }).catch(err => {
         res.status(500).send({
             message: err.message || 'Error. Products list is not exists.'
         });
     });
 });
-const getProductDetails = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Szczegóły produktu");
-    const { id } = req.body;
+// get product details
+const getProductDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.productId;
     product_1.default.findById(id)
         .then(product => {
         if (!product) {
@@ -42,13 +46,13 @@ const getProductDetails = (req, res, next) => __awaiter(void 0, void 0, void 0, 
             });
         }
         return res.status(500).send({
-            message: `Error retrieving note with Id: ${id}.`
+            message: `Error retrieving product with Id: ${id}.`
         });
     });
 });
-const addProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Dodawanie produktu");
-    if (!req.body.content) {
+// add a product
+const addProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.body.name && !req.body.price) {
         return res.status(400).send({
             message: "Product content can not be empty."
         });
@@ -64,33 +68,39 @@ const addProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
         }
     });
 });
-const updateProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Aktualizowanie produktu");
-    if (!req.body.content) {
+// update a product
+const updateProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.body.name && !req.body.price) {
         return res.status(400).send({
             message: "Product content can not be empty."
         });
     }
-    const { id, name, price } = req.body;
+    const id = req.params.productId;
+    const { name, price } = req.body;
+    const updateDate = Date.now();
     const options = {
         runValidator: true,
         upsert: false,
     };
-    product_1.default.findByIdAndUpdate(id, { name, price }, options, (err) => {
+    product_1.default.findByIdAndUpdate(id, { name, price, updateDate }, options, (err) => {
         if (err) {
-            res.status(404).send(err);
+            res.status(404).send({
+                message: `Product with Id: ${id} is not found.`
+            });
         }
         else {
             res.send('Product has been updated.');
         }
     });
 });
-const deleteProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Usuwanie produktu");
-    const { id } = req.body;
+// delete a product
+const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.params.productId;
     product_1.default.findByIdAndDelete(id, null, (err) => {
         if (err) {
-            res.status(404).send(err);
+            res.status(404).send({
+                message: `Product with Id: ${id} is not found.`
+            });
         }
         else {
             res.send('Product has been deleted.');

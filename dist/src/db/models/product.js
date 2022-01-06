@@ -14,7 +14,7 @@ const schema = new mongoose_1.Schema({
         min: [0, 'Price must be higher than 0!'],
     },
     updateDate: {
-        type: String,
+        type: Date,
         required: false,
     },
 });

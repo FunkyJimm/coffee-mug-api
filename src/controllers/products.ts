@@ -1,22 +1,27 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import Product from '../db/models/product';
 
-const getProducts = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("Produkty");
+// get all products
+const getProducts = async (req: Request, res: Response) => {
   Product.find()
   .then(products => {
-    res.send(products);
+    const productsList = products.map(product => (
+      {
+        id: product._id,
+        name: product.name,
+      }
+    ));
+    res.send(productsList);
   }).catch(err => {
     res.status(500).send({
       message: err.message || 'Error. Products list is not exists.'
-    })
-  })
+    });
+  });
 }
 
-const getProductDetails = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("Szczegóły produktu");
-
-  const { id } = req.body;
+// get product details
+const getProductDetails = async (req: Request, res: Response) => {
+  const id = req.params.productId;
 
   Product.findById(id)
     .then(product => {
@@ -33,15 +38,14 @@ const getProductDetails = async (req: Request, res: Response, next: NextFunction
         });
       }
       return res.status(500).send({
-        message: `Error retrieving note with Id: ${id}.`
+        message: `Error retrieving product with Id: ${id}.`
       });
     });
-};
+}
 
-const addProduct = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("Dodawanie produktu");
-
-  if (!req.body.content) {
+// add a product
+const addProduct = async (req: Request, res: Response) => {
+  if (!req.body.name && !req.body.price) {
     return res.status(400).send({
       message: "Product content can not be empty."
     });
@@ -60,39 +64,44 @@ const addProduct = async (req: Request, res: Response, next: NextFunction) => {
   });
 }
 
-const updateProduct = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("Aktualizowanie produktu");
-
-  if (!req.body.content) {
+// update a product
+const updateProduct = async (req: Request, res: Response) => {
+  if (!req.body.name && !req.body.price) {
     return res.status(400).send({
       message: "Product content can not be empty."
     });
   }
 
-  const { id, name, price } = req.body;
+  const id = req.params.productId;
+  const { name, price } = req.body;
+
+  const updateDate = Date.now();
 
   const options = {
     runValidator: true,
     upsert: false,
   }
 
-  Product.findByIdAndUpdate(id, { name, price }, options, (err) => {
+  Product.findByIdAndUpdate(id, { name, price, updateDate }, options, (err) => {
     if (err) {
-      res.status(404).send(err);
+      res.status(404).send({
+        message: `Product with Id: ${id} is not found.`
+      });
     } else {
       res.send('Product has been updated.');
     }
   });
 }
 
-const deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
-  console.log("Usuwanie produktu");
-
-  const { id } = req.body;
+// delete a product
+const deleteProduct = async (req: Request, res: Response) => {
+  const id = req.params.productId;
 
   Product.findByIdAndDelete(id, null, (err) => {
     if (err) {
-      res.status(404).send(err);
+      res.status(404).send({
+        message: `Product with Id: ${id} is not found.`
+      });
     } else {
       res.send('Product has been deleted.')
     }
